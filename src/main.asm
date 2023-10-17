@@ -74,6 +74,7 @@ save1               = savey+1
 frame_ct_0          = save1+1
 frame_ct_1          = frame_ct_0+1
 frame_ct_2          = frame_ct_1+1
+decrunch_flag       = frame_ct_2+1
 ; ==============================================================================
 KEY_CRSRUP          = 0x91
 KEY_CRSRDOWN        = 0x11
@@ -96,6 +97,7 @@ dd00_val0           = <!(vicbank0/0x4000) & 3
 d018_val0           = <(((vidmem0-vicbank0)/0x400) << 4)+ <(((charset0-vicbank0)/0x800) << 1)
 music_init          = 0x1000
 music_play          = music_init+3
+music_fade          = 0x113D
 ; ==============================================================================
                     !macro flag_set .flag {
                         lda #1
@@ -111,7 +113,6 @@ music_play          = music_init+3
 ; ==============================================================================
                     !zone DECRUNCH
                     *= code_exo
-                    LITERAL_SEQUENCES_NOT_USED = 1
 exomizer:           !src "exodecrunch.asm"
 exod_get_crunched_byte:
                     lda opbase + 1
@@ -121,6 +122,20 @@ nowrap:             dec opbase + 1
 ; change the $ffff to point to the byte immediately following the last
 ; byte of the crunched file data (mem command)
 opbase:             lda 0xFFFF
+                    rts
+; ------------------------------------------------------------------------------
+decrunch_song:      ldx song_pointer
+                    lda song_playlist,x
+                    bpl +
+                    lda #0x00
+                    sta song_pointer
++                   tax
+                    lda song_end_tab_lo,x
+                    sta opbase+1
+                    lda song_end_tab_hi,x
+                    sta opbase+2
+                    jsr exod_decrunch
+                    inc song_pointer
                     rts
 ; ==============================================================================
                     !zone IRQ
@@ -247,6 +262,8 @@ init_zp:            lda #0x00
 -                   sta 0x00,x
                     inx
                     bne -
+                    lda #0x01
+                    sta decrunch_flag
                     rts
 ; ==============================================================================
                     !zone NMI
@@ -269,6 +286,13 @@ wait_irq_bot:       +flag_clear wait_irq_bot
 ; ==============================================================================
                     !zone MAINLOOP
 mainloop:           jsr wait_irq_top
+                    +flag_get decrunch_flag
+                    beq mainloop
+                    +flag_clear decrunch_flag
+                    jsr decrunch_song
+                    jsr init_music
+                    lda #ENABLE
+                    sta enable_music
                     jmp mainloop
 ; ==============================================================================
                     !zone FRAME_COUNT
@@ -405,15 +429,27 @@ s03_end:            !bin "sid/movingfwd.exo"
 s04_end:            !bin "sid/puzzle.exo"
 s05_end:            !bin "sid/sadending.exo"
 s06_end:
+song_end_tab_lo:    !byte <s01_end
+                    !byte <s02_end
+                    !byte <s03_end
+                    !byte <s04_end
+                    !byte <s05_end
+                    !byte <s06_end
+song_end_tab_hi:    !byte >s01_end
+                    !byte >s02_end
+                    !byte >s03_end
+                    !byte >s04_end
+                    !byte >s05_end
+                    !byte >s06_end
 ; ==============================================================================
                     !zone SONGDATA
                     ;     0123456789ABCD
-s01_title:          !scr "Action Level  "
-s02_title:          !scr "Horror Level  "
-s03_title:          !scr "Introduction  "
-s04_title:          !scr "Moving Forward"
-s05_title:          !scr "Puzzle Level  "
-s06_title:          !scr "Sad Ending    "
+s01_title:          !scr "Action Level  "     ; 0
+s02_title:          !scr "Horror Level  "     ; 1
+s03_title:          !scr "Introduction  "     ; 2
+s04_title:          !scr "Moving Forward"     ; 3
+s05_title:          !scr "Puzzle Level  "     ; 4
+s06_title:          !scr "Sad Ending    "     ; 5
 song_title_tab_lo:  !byte <s01_title
                     !byte <s02_title
                     !byte <s03_title
@@ -445,5 +481,15 @@ song_time_tab_hi:   !byte >s01_time
                     !byte >s04_time
                     !byte >s05_time
                     !byte >s06_time
+; ------------------------------------------------------------------------------
+song_playlist:      !byte 0x02
+                    !byte 0x00
+                    !byte 0x03
+                    !byte 0x01
+                    !byte 0x04
+                    !byte 0x05
+                    !byte 0xFF
+; ------------------------------------------------------------------------------
+song_pointer:       !byte 0x00
 ; ==============================================================================
 code_end:

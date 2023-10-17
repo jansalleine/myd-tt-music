@@ -280,7 +280,7 @@ foreach (array_merge($gfxRes, $sidRes) as $filename)
 
     $splitnameArr = explode('.', $filename);
 
-    if (!count($splitnameArr) === 2) continue;
+    if (!count($splitnameArr) === 2 || !isset($splitnameArr[1])) continue;
 
     switch ($splitnameArr[1])
     {

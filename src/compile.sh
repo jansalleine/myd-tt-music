@@ -1,5 +1,5 @@
 #!/bin/sh
-OUTFILE="../intro".prg
+OUTFILE="../ttmusic".prg
 
 ./tools/convertRes
 ./tools/txt2scr -o scrolltext.asm scrolltext.txt

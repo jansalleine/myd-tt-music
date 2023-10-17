@@ -7,6 +7,7 @@ $0007: save1
 $0008: frame_ct_0
 $0009: frame_ct_1
 $000A: frame_ct_2
+$000B: decrunch_flag
 $0080: exod_zp_len_lo
 $0081: exod_zp_len_hi
 $0082: exod_zp_src_lo
@@ -20,10 +21,11 @@ $0400: vidmem0
 $0800: sprite_data
 $0900: exod_get_bits, code_exo, exomizer
 $091D: exod_decrunch
-$0A11: exod_decrunch_table
-$0AAD: exod_get_crunched_byte
-$0AB5: nowrap
-$0AB8: opbase
+$0A25: exod_decrunch_table
+$0AC1: exod_get_crunched_byte
+$0AC9: nowrap
+$0ACC: opbase
+$0AD0: decrunch_song
 $0B00: irq
 $0B2D: irq_plus_cmp
 $0B34: irq_next
@@ -36,6 +38,7 @@ $0C07: enable_music
 $0C0D: irq01
 $1000: music_init, charset0
 $1003: music_play
+$113D: music_fade
 $2400: code_start
 $240E: init_code
 $2420: init_irq
@@ -43,12 +46,37 @@ $2444: init_music
 $244C: init_nmi
 $245D: init_vic
 $2468: init_zp
-$2472: nmi
-$247E: wait_irq_top
-$2487: wait_irq_bot
-$2492: mainloop
-$2498: framecounter
-$24AC: basicfade
-$2570: code_end
+$2476: nmi
+$2482: wait_irq_top
+$248B: wait_irq_bot
+$2496: mainloop
+$24AF: framecounter
+$24C3: basicfade
+$30DA: s01_end
+$3BFA: s02_end
+$44A3: s03_end
+$4EF2: s04_end
+$58C0: s05_end
+$630A: song_end_tab_lo, s06_end
+$6310: song_end_tab_hi
+$6316: s01_title
+$6324: s02_title
+$6332: s03_title
+$6340: s04_title
+$634E: s05_title
+$635C: s06_title
+$636A: song_title_tab_lo
+$6370: song_title_tab_hi
+$6376: s01_time
+$637A: s02_time
+$637E: s03_time
+$6382: s04_time
+$6386: s05_time
+$638A: s06_time
+$638E: song_time_tab_lo
+$6394: song_time_tab_hi
+$639A: song_playlist
+$63A1: song_pointer
+$63A2: code_end
 $EA87: keyscan
 $FFE4: getin
