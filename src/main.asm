@@ -110,7 +110,7 @@ d018_val1           = <(((vidmem1-vicbank1)/0x400) << 4)+ <(((charset1-vicbank1)
 d018_val2           = <(((vidmem1-vicbank1)/0x400) << 4)+ <(((bitmap0-vicbank1)/0x800) << 1)
 music_init          = 0x1000
 music_play          = music_init+3
-music_fade          = 0x113D
+music_fade          = 0x11C2
 ; ==============================================================================
                     !macro flag_set .flag {
                         lda #1
@@ -383,6 +383,7 @@ irq01:              ldx #09
                     lda #DARK_GREY
                     sta 0xD020
                     sta 0xD021
+enable_fadeout:     bit song_fadeout
                     jmp irq_end
 ; ------------------------------------------------------------------------------
 irq02:              ldx #09
@@ -650,6 +651,43 @@ fade_in:            lda #FADEIN_DELAY
 +                   sty .ysav+1
                     rts
 ; ==============================================================================
+                    !zone SONG_FADEOUT
+song_fadeout:       dec .fadetime
+                    lda .fadetime
+                    beq +
+                    rts
++                   lda #32
+                    sta .fadetime
+cur_vol:            lda #0x0F
+vol_addr:           sta music_fade
+                    beq +
+                    dec cur_vol+1
+                    rts
++                   lda #0x0F
+                    sta cur_vol+1
+                    lda #DISABLE
+                    sta enable_display
+                    lda #BLACK
+                    jsr color_song_playing
+                    inc song_playing
+                    lda song_playing
+                    cmp #NUMSONGS
+                    bne +
+                    lda #0x00
+                    sta song_playing
++                   +flag_set decrunch_flag
+                    lda #DISABLE
+                    sta enable_fadeout
+                    sta enable_music
+                    sta enable_timer
+                    sta enable_timer_check
+                    lda #0
+                    sta 0xD404
+                    sta 0xD40B
+                    sta 0xD412
+                    rts
+.fadetime:          !byte 32
+; ==============================================================================
                     !zone DISPLAY
 display:            lda #CYAN
                     jsr color_song_playing
@@ -668,7 +706,7 @@ color_song_playing: sta .color+1
 .color:             lda #0x00
 .dst_colram0:       sta 0x0000,x
                     dex
-                    bpl .dst_colram0
+                    bne .dst_colram0
                     rts
 ; ------------------------------------------------------------------------------
 cursor:             jsr .anim_crsr
@@ -800,6 +838,12 @@ do_cycle:           lda #CYCLE_SPEED
                     bmi +
                     jmp .color
 +                   inc .coltab_pt
+                    lda #DARK_GREY
+                    sta 0xD800+(7*40)+18
+                    sta 0xD800+(7*40)+19
+                    sta 0xD800+(7*40)+20
+                    sta 0xD800+(7*40)+21
+                    sta 0xD800+(7*40)+22
                     rts
 .coltab_pt:         !byte 0x00
 ; ==============================================================================
@@ -848,7 +892,8 @@ timer_check:        min_end_lo = vidmem1+(15*40)+35
                     cmp sec_end_lo
                     beq +
                     rts
-+                   +flag_set tune_end_flag
++                   lda #ENABLE
+                    sta enable_fadeout
                     lda #DISABLE
                     sta enable_timer_check
                     rts
@@ -897,10 +942,10 @@ song_title_tab_hi:  !byte >s01_title
                     !byte >s06_title
 ; ------------------------------------------------------------------------------
 s01_time:           !scr "2:00"
-s02_time:           !scr "2:17"
+s02_time:           !scr "2:19"
 s03_time:           !scr "1:05"
-s04_time:           !scr "2:37"
-s05_time:           !scr "1:50"
+s04_time:           !scr "2:36"
+s05_time:           !scr "1:54"
 s06_time:           !scr "2:05"
 song_time_tab_lo:   !byte <s01_time
                     !byte <s02_time
@@ -917,8 +962,8 @@ song_time_tab_hi:   !byte >s01_time
 ; ------------------------------------------------------------------------------
 song_playlist:      !byte 0x02
                     !byte 0x00
-                    !byte 0x03
                     !byte 0x01
+                    !byte 0x03
                     !byte 0x04
                     !byte 0x05
                     !byte 0xFF
@@ -960,7 +1005,7 @@ vidmem_src:         ; 00 - 07 logo
 !byte $00,$00,$00,$00,$00,$44,$53,$76,$77,$78,$00,$00,$00,$00,$00,$00
 !byte $42,$5C,$00,$00,$00,$00,$00,$42,$5C,$00,$42,$43,$00,$00,$00,$00
 !byte $00,$44,$43,$00,$00,$42,$43,$00,$00,$00,$00,$00,$00,$44,$43,$79
-!byte $7A,$7B,$00,$00,$00,$00,$00,$00,$42,$5C,$00,$00,$00,$00,$00,$42
+!byte $7A,$7B,$00,$00,$00,$00,$00,$00,$42,$5C,$0D,$15,$13,$09,$03,$42
 !byte $5C,$00,$42,$43,$00,$00,$00,$00,$00,$44,$43,$00,$00,$42,$43,$00
                     !fi 40, 0x00
                     !fi 40, 0x00
@@ -976,9 +1021,12 @@ vidmem_src:         ; 00 - 07 logo
                     !bin "gfx/mountain.scr",,(17*40)
 ; ------------------------------------------------------------------------------
 colram_src:         ; 00 - 07 logo
-                    !for i, 0, 7 {
+                    !for i, 0, 6 {
                         !fi 40, GREY
                     }
+                    !fi 18, GREY
+                    !fi 5, DARK_GREY
+                    !fi 40-18-5, GREY
                     ; 08 - 16 textarea
                     !for i, 8, 14 {
                         !fi 40, 0x00
@@ -997,9 +1045,9 @@ bitmap_src:         !bin "gfx/mountain.bmp",,8*(17*40)
 charset_src:        !bin "gfx/logochars.chr"
 ; ------------------------------------------------------------------------------
 colortable:         !for i, 0, 3 {
-                        !fi 16, GREY
+                        !fi 8, GREY
                         !byte GREY, GREY, GREY, GREY, 0x0C, 0x03, 0x0D, 0x01
-                        !fi 16, 0x01
+                        !fi 24, 0x01
                         !byte 0x01, 0x0D, 0x03, 0x0C, GREY, GREY, GREY, GREY
                         !fi 16, GREY
                     }
