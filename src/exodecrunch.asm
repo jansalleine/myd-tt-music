@@ -105,18 +105,18 @@ ENABLE_SPLIT_ENCODING = 0
 ; -------------------------------------------------------------------
 ; zero page addresses used
 ; -------------------------------------------------------------------
-exod_zp_len_lo = $80
-exod_zp_len_hi = $81
+exod_zp_len_lo = zp_end
+exod_zp_len_hi = zp_end+1
 
-exod_zp_src_lo  = $82
+exod_zp_src_lo  = zp_end+2
 exod_zp_src_hi  = exod_zp_src_lo + 1
 
-exod_zp_bits_hi = $84
+exod_zp_bits_hi = zp_end+4
 !if DONT_REUSE_OFFSET = 0 {
-exod_zp_ro_state = $85
+exod_zp_ro_state = zp_end+5
 }
 
-exod_zp_bitbuf  = $86
+exod_zp_bitbuf  = zp_end+6
 exod_zp_dest_lo = exod_zp_bitbuf + 1      ; dest addr lo
 exod_zp_dest_hi = exod_zp_bitbuf + 2      ; dest addr hi
 

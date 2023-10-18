@@ -2,7 +2,8 @@
 <?php
 
 $blacklist = [
-
+    'screenshot.png',
+    'letters.ctm',
 ];
 
 /*
@@ -18,7 +19,7 @@ $blacklist = [
  *          mcsprites
  */
 $png2prgArgs = [
-    'xmas.png' => '-mode koala',
+    'mountain.png' => '-bpc 6',
 ];
 
 function convertCtm(string $name, string $target) : void

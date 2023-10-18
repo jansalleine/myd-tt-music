@@ -4,3 +4,7 @@ Intro           : ~ 1:05 min.
 Moving Forward  : ~ 2:37 min.
 Puzzle Level    : ~ 1:50 min.
 Sad Ending      : ~ 2:02 min.
+
+--------------------------------------------------------------------------------
+logo:       8 lines
+mountain:   skip 17 lines
