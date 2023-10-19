@@ -4,6 +4,7 @@
 .Trash-*
 .nfs*
 *.avi
+tmp
 labels.asm
 out.prg
 release

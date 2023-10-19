@@ -101,7 +101,7 @@ charset1            = vicbank1+0x0000
 vidmem0             = vicbank0+0x0400
 vidmem1             = vicbank1+0x0800
 bitmap0             = vicbank1+0x2000
-sprite_data         = vicbank0+0x0800
+sprite_data         = vicbank1+0x0C00
 sprite_base         = <((sprite_data-vicbank0)/0x40)
 dd00_val0           = <!(vicbank0/0x4000) & 3
 dd00_val1           = <!(vicbank1/0x4000) & 3
@@ -165,6 +165,9 @@ decrunch_song:      ldx song_pointer
                     lda #ENABLE
                     sta enable_display
                     sta enable_cycle
+                    sta enable_scroller
+                    sta enable_sprites
+                    sta enable_keyboard
                     rts
 .empty_time:        !scr "0:00"
 ; ==============================================================================
@@ -367,6 +370,7 @@ irq00:              +flag_set irq_ready_top
                     sta 0xD011
                     jsr framecounter
 enable_display:     bit display
+                    jsr sprites_rot_coltab
                     jmp irq_end
 ; ------------------------------------------------------------------------------
 irq01:              ldx #09
@@ -384,6 +388,10 @@ irq01:              ldx #09
                     sta 0xD020
                     sta 0xD021
 enable_fadeout:     bit song_fadeout
+enable_music:       bit music_play
+enable_timer:       bit timer_increase
+enable_timer_check: bit timer_check
+enable_scroller:    bit scroller
                     jmp irq_end
 ; ------------------------------------------------------------------------------
 irq02:              ldx #09
@@ -406,19 +414,18 @@ irq02:              ldx #09
                     sta 0xD016
                     lda #0x3B
                     sta 0xD011
-enable_music:       bit music_play
-enable_timer:       bit timer_increase
-enable_timer_check: bit timer_check
+enable_sprites:     jsr sprites_set
+                    jsr sprites_col
                     jmp irq_end
 ; ------------------------------------------------------------------------------
-irq03:              ldx #09
+irq03:              ldx #0x09
 -                   dex
                     bpl -
                     nop
                     lda #DARK_GREY
                     sta 0xD020
                     sta 0xD021
-                    ldx #09
+                    ldx #0x09
 -                   dex
                     bpl -
                     nop
@@ -510,6 +517,9 @@ init_vic:           lda #dd00_val0
                     sta vidmem1+0x100,x
                     sta vidmem1+0x200,x
                     sta vidmem1+0x2E8,x
+                    sta sprite_data+0x000,x
+                    sta sprite_data+0x100,x
+                    sta sprite_data+0x200,x
                     lda bitmap_src+0x0000,x
                     sta bitmap0+0x1540,x
                     lda bitmap_src+0x0100,x
@@ -592,7 +602,7 @@ wait_irq_bot:       +flag_clear wait_irq_bot
                     !zone MAINLOOP
 mainloop:           jsr wait_irq_top
 enable_cycle:       bit do_cycle
-                    jsr keyboard_get
+enable_keyboard:    jsr keyboard_get
                     +flag_get decrunch_flag
                     beq mainloop
                     +flag_clear decrunch_flag
@@ -787,8 +797,7 @@ keyboard_get:       lda #0x36
                     lda #0
                     sta .pause_toggle+1
                     jmp .key_exit
-.pause:             jsr wait_irq_bot
-                    lda #DISABLE
+.pause:             lda #DISABLE
                     sta enable_music
                     sta enable_timer
                     sta enable_timer_check
@@ -896,7 +905,225 @@ timer_check:        min_end_lo = vidmem1+(15*40)+35
                     sta enable_fadeout
                     lda #DISABLE
                     sta enable_timer_check
+                    sta enable_keyboard
                     rts
+; ==============================================================================
+                    !zone SPRITES
+                    !align 255, 0, 0
+sprites_col:        lda #0xD2
+-                   cmp 0xD012
+                    bne -
+                    ldx #0x00
+                    lda sprites_coltab,x
+                    jsr .fake
+                    jsr .fake
+                    jsr .fake
+                    sta 0xD027
+                    sta 0xD028
+                    sta 0xD029
+                    sta 0xD02A
+                    sta 0xD02B
+                    inx
+--                  lda sprites_coltab,x
+                    bit 0xEA
+                    ldy #0x02
+-                   dey
+                    bpl -
+                    sta 0xD027
+                    sta 0xD028
+                    sta 0xD029
+                    sta 0xD02A
+                    sta 0xD02B
+                    nop
+                    bit 0xEA
+                    inx
+                    cpx #0x06
+                    bne --                      ; x = 6
+                    lda sprites_coltab,x
+                    sta 0xD027
+                    sta 0xD028
+                    sta 0xD029
+                    sta 0xD02A
+                    sta 0xD02B
+                    inx                         ; x = 7
+-                   lda sprites_coltab,x
+                    bit 0xEA
+                    bit 0xEA
+                    bit 0xEA
+                    sta 0xD027
+                    sta 0xD028
+                    sta 0xD029
+                    sta 0xD02A
+                    sta 0xD02B
+                    nop
+                    inx
+                    cpx #0x0D
+                    bne -                       ; x = D
+                    jsr .fake
+                    bit 0xEA
+                    nop
+                    lda sprites_coltab,x
+                    sta 0xD027
+                    sta 0xD028
+                    sta 0xD029
+                    sta 0xD02A
+                    sta 0xD02B
+                    inx                         ; x = E
+                    jsr .fake
+                    bit 0xEA
+                    bit 0xEA
+--                  lda sprites_coltab,x
+                    nop
+                    nop
+                    sta 0xD027
+                    sta 0xD028
+                    sta 0xD029
+                    sta 0xD02A
+                    sta 0xD02B
+                    ldy #0x03
+-                   dey
+                    bpl -
+                    inx
+                    cpx #0x10
+                    bne --
+.fake:              rts
+; ------------------------------------------------------------------------------
+                    SPRCOL_ROTATE_SPEED = 0x02
+sprites_rot_coltab: lda #SPRCOL_ROTATE_SPEED
+                    beq +
+                    dec sprites_rot_coltab+1
+                    rts
++                   lda #SPRCOL_ROTATE_SPEED
+                    sta sprites_rot_coltab+1
+                    ldx #0x0F
+-                   lda sprites_coltab,x
+                    sta sprites_coltab+1,x
+                    dex
+                    bpl -
+                    lda sprites_coltab_sav
+                    sta sprites_coltab
+                    rts
+; ------------------------------------------------------------------------------
+                    !align 255, 0, 0
+sprites_coltab:     !byte 0x06, 0x0B, 0x0C, 0x0F
+                    !byte 0x0E, 0x03, 0x07, 0x01
+                    !byte 0x01, 0x01, 0x07, 0x03
+                    !byte 0x0E, 0x0F, 0x0C, 0x0B
+sprites_coltab_sav: !byte 0x06
+; ------------------------------------------------------------------------------
+sprites_set:        ldx #sprite_base
+                    stx vidmem1+0x3F8
+                    inx
+                    stx vidmem1+0x3F9
+                    inx
+                    stx vidmem1+0x3FA
+                    inx
+                    stx vidmem1+0x3FB
+                    inx
+                    stx vidmem1+0x3FC
+
+                    lda #0xC7
+                    sta 0xD001
+                    sta 0xD003
+                    sta 0xD005
+                    sta 0xD007
+                    sta 0xD009
+
+                    lda #0x18
+                    sta 0xD000
+                    lda #0x18+(1*48)
+                    sta 0xD002
+                    lda #0x18+(2*48)
+                    sta 0xD004
+                    lda #0x18+(3*48)
+                    sta 0xD006
+                    lda #0x18+(4*48)
+                    sta 0xD008
+
+                    lda #DARK_GREY
+                    sta 0xD027
+                    sta 0xD028
+                    sta 0xD029
+                    sta 0xD02A
+                    sta 0xD02B
+
+                    lda #0x00
+                    sta 0xD01C
+
+                    lda #0x1F
+                    sta 0xD017
+                    sta 0xD01B
+                    sta 0xD01D
+                    sta 0xD015
+                    rts
+; ==============================================================================
+                    !zone SCROLLER
+scroller:           lda #0x07
+                    beq +
+                    dec scroller+1
+                    jsr .scroll
+                    rts
++                   lda #0x07
+                    sta scroller+1
+                    jsr .get_text
+                    jsr .fill_buf
+                    jsr .scroll
+                    rts
+; ------------------------------------------------------------------------------
+.get_text:
+.pt_scrolltext:     lda scrolltext
+                    cmp #0xFF
+                    beq .text_reset
+                    tay
+                    clc
+                    lda .pt_scrolltext+1
+                    adc #0x01
+                    sta .pt_scrolltext+1
+                    lda .pt_scrolltext+2
+                    adc #0x00
+                    sta .pt_scrolltext+2
+                    tya
+                    rts
+; ------------------------------------------------------------------------------
+.text_reset:        lda #<scrolltext
+                    sta .pt_scrolltext+1
+                    lda #>scrolltext
+                    sta .pt_scrolltext+2
+                    lda #' '
+                    rts
+; ------------------------------------------------------------------------------
+test:
+.scroll:            !for j, 0, 7 {
+                        rol scrollchar+j
+                        rol sprite_data+(4*64)+18+1+(j*3)
+                        rol sprite_data+(4*64)+18+(j*3)
+                        !for i, 3, 0 {
+                            rol sprite_data+(i*64)+18+2+(j*3)
+                            rol sprite_data+(i*64)+18+1+(j*3)
+                            rol sprite_data+(i*64)+18+0+(j*3)
+                        }
+                    }
+                    rts
+test_end:
+; ------------------------------------------------------------------------------
+.fill_buf:          clc
+                    rol
+                    rol
+                    rol
+                    sta .char_point+1
+                    bcc +
+                    inc .char_point+2
++                   ldx #0x07
+.char_point:        lda charset1,x
+                    sta scrollchar,x
+                    dex
+                    bpl .char_point
+                    lda #(<charset1)
+                    sta .char_point+1
+                    lda #(>charset1)
+                    sta .char_point+2
+                    rts
+scrollchar:         !fi 8, 0
 ; ==============================================================================
                     !zone EXO_DATA
                     !align 255, 0 ,0
@@ -1051,6 +1278,9 @@ colortable:         !for i, 0, 3 {
                         !byte 0x01, 0x0D, 0x03, 0x0C, GREY, GREY, GREY, GREY
                         !fi 16, GREY
                     }
-
+; ------------------------------------------------------------------------------
+scrolltext:         !src "scrolltext.asm"
+scrolltext_end:
+                    *= scrolltext_end-1
 ; ==============================================================================
 code_end:

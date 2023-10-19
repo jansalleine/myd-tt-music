@@ -1,2 +1,1 @@
-!scr "this is an example scrolltext. "
-!scr "you can write a couple of lines. "
+!scr "", 0x22 ,"trap them music", 0x22 ," by spider / myd! in memory of vernunftmensch. "
