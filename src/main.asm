@@ -685,6 +685,7 @@ vol_addr:           sta music_fade
                     bne +
                     lda #0x00
                     sta song_playing
+                    sta song_pointer
 +                   +flag_set decrunch_flag
                     lda #DISABLE
                     sta enable_fadeout
