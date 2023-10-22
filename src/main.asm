@@ -102,7 +102,9 @@ vidmem0             = vicbank0+0x0400
 vidmem1             = vicbank1+0x0800
 bitmap0             = vicbank1+0x2000
 sprite_data         = vicbank1+0x0C00
-sprite_base         = <((sprite_data-vicbank0)/0x40)
+sprite_base         = <((sprite_data-vicbank1)/0x40)
+sprite_data0        = vicbank1+0x1000
+sprite_base0        = <((sprite_data0-vicbank1)/0x40)
 dd00_val0           = <!(vicbank0/0x4000) & 3
 dd00_val1           = <!(vicbank1/0x4000) & 3
 d018_val0           = <(((vidmem0-vicbank0)/0x400) << 4)+ <(((charset0-vicbank0)/0x800) << 1)
@@ -167,6 +169,7 @@ decrunch_song:      ldx song_pointer
                     sta enable_cycle
                     sta enable_scroller
                     sta enable_sprites
+                    sta enable_hero
                     sta enable_keyboard
                     rts
 .empty_time:        !scr "0:00"
@@ -370,6 +373,7 @@ irq00:              +flag_set irq_ready_top
                     sta 0xD011
                     jsr framecounter
 enable_display:     bit display
+enable_hero:        bit sprites_hero
                     jsr sprites_rot_coltab
                     jmp irq_end
 ; ------------------------------------------------------------------------------
@@ -551,7 +555,22 @@ init_vic:           lda #dd00_val0
                     inx
                     beq +
                     jmp -
-+                   ldy #0x00
++                   lda #0x30
+                    sta 0x01
+                    ldx #0x00
+-                   lda sprhero_src+0x000,x
+                    sta 0xD000+0x000,x
+                    lda sprhero_src+0x100,x
+                    sta 0xD000+0x100,x
+                    lda sprhero_src+0x200,x
+                    sta 0xD000+0x200,x
+                    lda sprhero_src+0x300,x
+                    sta 0xD000+0x300,x
+                    inx
+                    bne -
+                    lda #0x35
+                    sta 0x01
+                    ldy #0x00
 -                   lda song_playlist,y
                     bmi ++
                     tax
@@ -907,6 +926,48 @@ timer_check:        min_end_lo = vidmem1+(15*40)+35
                     lda #DISABLE
                     sta enable_timer_check
                     sta enable_keyboard
+                    rts
+; ==============================================================================
+                    !zone SPRITES_HERO
+                    HERO_SPEED = 0x05
+sprites_hero:       jsr .init
+.anim:              lda #HERO_SPEED
+                    beq +
+                    dec .anim+1
+                    rts
++                   lda #HERO_SPEED
+                    sta .anim+1
+                    clc
+                    lda vidmem1+0x3FD
+                    adc #0x01
+                    cmp #sprite_base0+4
+                    bne +
+                    lda #sprite_base0
++                   sta vidmem1+0x3FD
+                    rts
+.init:              lda #sprite_base0
+                    sta vidmem1+0x3FD       ; sprite #5
+                    lda #BLACK
+                    sta 0xD025
+                    lda #WHITE
+                    sta 0xD026
+                    lda #GREY
+                    sta 0xD02C
+                    lda #0x10
+                    sta 0xD00A
+                    lda #0x81
+                    sta 0xD00B
+                    lda #<.update
+                    sta sprites_hero+1
+                    lda #>.update
+                    sta sprites_hero+2
+.update:            lda #0x20
+                    sta 0xD010
+                    sta 0xD017
+                    sta 0xD01B
+                    sta 0xD01C
+                    sta 0xD01D
+                    sta 0xD015
                     rts
 ; ==============================================================================
                     !zone SPRITES
@@ -1279,6 +1340,8 @@ colortable:         !for i, 0, 3 {
                         !byte 0x01, 0x0D, 0x03, 0x0C, GREY, GREY, GREY, GREY
                         !fi 16, GREY
                     }
+; ------------------------------------------------------------------------------
+sprhero_src:        !bin "gfx/hero.spr"
 ; ------------------------------------------------------------------------------
 scrolltext:         !src "scrolltext.asm"
 scrolltext_end:
