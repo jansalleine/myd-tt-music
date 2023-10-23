@@ -2,8 +2,7 @@
 <?php
 
 $blacklist = [
-    'screenshot.png',
-    'letters.ctm',
+    'retrofan-charset-full.ctm',
 ];
 
 /*
