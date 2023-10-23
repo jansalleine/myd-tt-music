@@ -168,8 +168,6 @@ decrunch_song:      ldx song_pointer
                     sta enable_display
                     sta enable_cycle
                     sta enable_scroller
-                    sta enable_sprites
-                    sta enable_hero
                     sta enable_keyboard
                     rts
 .empty_time:        !scr "0:00"
@@ -676,6 +674,8 @@ fade_in:            lda #FADEIN_DELAY
                     sta enable_fadein
                     lda #ENABLE
                     sta enable_display
+                    sta enable_sprites
+                    sta enable_hero
                     +flag_set decrunch_flag
 +                   sty .ysav+1
                     rts
@@ -944,29 +944,60 @@ sprites_hero:       jsr .init
                     bne +
                     lda #sprite_base0
 +                   sta vidmem1+0x3FD
+                    clc
+                    lda vidmem1+0x3FE
+                    adc #0x01
+                    cmp #sprite_base0+4+4
+                    bne +
+                    lda #sprite_base0+4
++                   sta vidmem1+0x3FE
+                    clc
+                    lda vidmem1+0x3FF
+                    adc #0x01
+                    cmp #sprite_base0+4+4+4
+                    bne +
+                    lda #sprite_base0+4+4
++                   sta vidmem1+0x3FF
                     rts
 .init:              lda #sprite_base0
                     sta vidmem1+0x3FD       ; sprite #5
+                    lda #sprite_base0+4+1
+                    sta vidmem1+0x3FE       ; sprite #6
+                    lda #sprite_base0+4+4+2
+                    sta vidmem1+0x3FF       ; sprite #7
                     lda #BLACK
                     sta 0xD025
                     lda #WHITE
                     sta 0xD026
                     lda #GREY
                     sta 0xD02C
+                    lda #BLACK
+                    sta 0xD02D
+                    sta 0xD02E
                     lda #0x10
                     sta 0xD00A
                     lda #0x81
                     sta 0xD00B
+                    lda #0xFF
+                    sta 0xD00C
+                    lda #0x3F
+                    sta 0xD00E
+                    lda #0x99
+                    sta 0xD00D
+                    sta 0xD00F
                     lda #<.update
                     sta sprites_hero+1
                     lda #>.update
                     sta sprites_hero+2
-.update:            lda #0x20
+.update:            lda #%10100000
                     sta 0xD010
-                    sta 0xD017
+                    lda #0x00
                     sta 0xD01B
+                    lda #%00100000
+                    sta 0xD017
                     sta 0xD01C
                     sta 0xD01D
+                    lda #%11100000
                     sta 0xD015
                     rts
 ; ==============================================================================
@@ -1302,7 +1333,7 @@ vidmem_src:         ; 00 - 07 logo
                     !scr " 01.                                    "
                     !scr " 02.                                    "
                     !scr " 03.                                    "
-                    !scr " 04.                                    "
+                    !scr " 04.                         ", 0x7F, "       ", 0x7E, "  "
                     !scr " 05.                                    "
                     !scr " 06.                        0:00 / 0:00 "
                     !fi 40, 0x00
@@ -1317,9 +1348,14 @@ colram_src:         ; 00 - 07 logo
                     !fi 5, DARK_GREY
                     !fi 40-18-5, GREY
                     ; 08 - 16 textarea
-                    !for i, 8, 14 {
+                    !for i, 8, 12 {
                         !fi 40, 0x00
                     }
+                    !fi 29, 0x00
+                    !byte CYAN
+                    !fi 7, 0x00
+                    !byte CYAN, 0x00, 0x00
+                    !fi 40, 0x00
                     !fi 28, 0x00
                     !byte 0x01, 0x0F, 0x01, 0x01
                     !byte 0x00, 0x0C, 0x00
@@ -1342,6 +1378,7 @@ colortable:         !for i, 0, 3 {
                     }
 ; ------------------------------------------------------------------------------
 sprhero_src:        !bin "gfx/hero.spr"
+                    !bin "gfx/sprite-overlays.spr",8*0x40,0
 ; ------------------------------------------------------------------------------
 scrolltext:         !src "scrolltext.asm"
 scrolltext_end:
