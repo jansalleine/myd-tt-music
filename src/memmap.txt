@@ -121,8 +121,8 @@ $7D7F: charset_src
 $817F: colortable
 $827F: sprhero_src
 $857F: scrolltext
-$861D: code_end
-$861E: scrolltext_end
+$8E04: code_end
+$8E05: scrolltext_end
 $C000: charset1
 $C800: vidmem1
 $CA74: min_cnt_lo

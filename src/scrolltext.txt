@@ -1,3 +1,30 @@
 "trap them music" by spider / myd! in memory of vernunftmensch. additional
 graphics by retrofan. original graphics by j-snake. code, music and font by
 spider.
+This is a collection of all the music I made for Vernunftmensch while he was
+working on his C64 port of "Trap Them". I must admit I don't know which versions
+of the tunes he managed to build into the last version and which not. But these
+are the final versions of all songs that I sent to him. All tunes except
+"Introduction" are 2 SID voices only, because the third sid voice was
+reserved for SFX. There were two songs that I named for this collection that
+were only named "owntune01" and "owntune02" before, because the other ones
+had the original soundtrack of the PC version as template. this whole project
+was kind of super crazy and often times all the sceners who participated
+in helping vernunftmensch lost their minds over the kind of strange ideas
+he had for this project. but he was really passionate about it and kept on
+going against all odds. I remember one time finally meeting him at a bunker
+party and he was such a nice guy and it was a pleasure to spend time with him.
+And it's often the case when we "meet" people online that we forget that
+there is a complete human being behind our online "personas". and yeah,
+people called me out for being a "materialist" - but for me it's really
+something special to meet folks i only know from the internet in the RL aka
+real life. i'm glad that i had the opportunity to meet vernunftmensch.
+everything about his passion that may have looked silly from the distance of
+the internet wasn't that silly anymore when meeting him. he lived his dream.
+he wanted to port this game to C64 and he did everything in his power to
+do so. for that he has earned my honest respect. and if there is a heaven
+and if there is a god i'm really looking forward to meet vernunftmensch again
+in the golden city of new jerusalem. and if not: he left a lasting impression
+on me - of someone who is really dedicated to one thing. and i'll keep that
+impression as a treasure in my heart as long as i live. thank you helmut!
+i am happy that i could contribute a little part to your dream!
