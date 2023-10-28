@@ -3,8 +3,7 @@
 C64 8580 SID tune music collection.<br>
 Release Group: [Mayday!](https://csdb.dk/group/?id=7228)
 
- - [CSDb entry](https://csdb.dk/release/?id=160991)
- - [Video capture](https://youtu.be/Gtdrm41aCN0) (YouTube)
+ - [CSDb entry](https://csdb.dk/release/index.php?id=236548)
 
 ## License (CC BY-NC-ND 4.0)
 
